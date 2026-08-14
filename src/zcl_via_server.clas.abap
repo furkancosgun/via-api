@@ -123,24 +123,28 @@ CLASS ZCL_VIA_SERVER IMPLEMENTATION.
 
 
   METHOD match_route.
-    DATA lv_matched TYPE abap_bool.
+    DATA lv_matched    TYPE abap_bool.
+    DATA lt_parameters TYPE zif_via_context=>ty_t_name_value.
+
+    CLEAR: eo_route, et_parameters, et_allowed_methods.
 
     LOOP AT ms_context-routes ASSIGNING FIELD-SYMBOL(<fs_route>).
+      CLEAR lt_parameters.
       lcl_route_matcher=>match_path( EXPORTING iv_path       = iv_path
                                                iv_route      = <fs_route>-path
                                      IMPORTING ev_matched    = lv_matched
-                                               et_parameters = et_parameters ).
+                                               et_parameters = lt_parameters ).
       IF lv_matched = abap_false.
         CONTINUE.
       ENDIF.
 
-      IF iv_method <> <fs_route>-method.
+      IF iv_method <> <fs_route>-method AND <fs_route>-method <> '*'.
         APPEND <fs_route>-method TO et_allowed_methods.
-        CLEAR et_parameters.
         CONTINUE.
       ENDIF.
 
       eo_route = <fs_route>-handler.
+      et_parameters = lt_parameters.
       EXIT.
     ENDLOOP.
   ENDMETHOD.

@@ -265,13 +265,27 @@ CLASS lcl_route_matcher IMPLEMENTATION.
       ENDIF.
 
       DATA(lv_rseg) = lt_route_segs[ lv_route_idx ].
+      DATA(lv_rlen) = strlen( lv_rseg ).
 
-      IF lv_rseg = '*' OR lv_rseg CP '{**}'.
+      DATA(lv_prefix2) = COND string( WHEN lv_rlen >= 2
+                                      THEN substring( val = lv_rseg
+                                                      off = 0
+                                                      len = 2 ) ).
+      DATA(lv_first1)  = COND string( WHEN lv_rlen >= 1
+                                      THEN substring( val = lv_rseg
+                                                      off = 0
+                                                      len = 1 ) ).
+      DATA(lv_last1)   = COND string( WHEN lv_rlen >= 1
+                                      THEN substring( val = lv_rseg
+                                                      off = lv_rlen - 1
+                                                      len = 1 ) ).
+
+      IF lv_rseg = '*' OR ( lv_rlen >= 3 AND lv_prefix2 = '{*' AND lv_last1 = '}' ).
         DATA(lv_param_name) = COND string( WHEN lv_rseg = '*'
                                            THEN '*'
                                            ELSE substring( val = lv_rseg
                                                            off = 2
-                                                           len = strlen( lv_rseg ) - 3 ) ).
+                                                           len = lv_rlen - 3 ) ).
 
         CLEAR lv_rest_path.
         LOOP AT lt_path_segs ASSIGNING FIELD-SYMBOL(<fs_pseg>) FROM lv_path_idx.
@@ -296,10 +310,10 @@ CLASS lcl_route_matcher IMPLEMENTATION.
 
       DATA(lv_pseg) = lt_path_segs[ lv_path_idx ].
 
-      IF lv_rseg CP '{*}'.
+      IF lv_rlen >= 2 AND lv_first1 = '{' AND lv_last1 = '}'.
         DATA(lv_seg_param) = substring( val = lv_rseg
                                         off = 1
-                                        len = strlen( lv_rseg ) - 2 ).
+                                        len = lv_rlen - 2 ).
         INSERT VALUE #( name  = lv_seg_param
                         value = lv_pseg )
                INTO TABLE et_parameters.
