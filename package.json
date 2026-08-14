@@ -1,0 +1,24 @@
+{
+  "name": "via-api",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('output',{recursive:true,force:true})\"",
+    "lint": "abaplint",
+    "fix": "abaplint --fix",
+    "unit": "npm run clean && abap_transpile && node --expose-gc output/index.mjs",
+    "exec": "npm run clean && abap_transpile && node run.mjs",
+    "test": "npm run lint && npm run unit",
+    "express":"npm run clean && abap_transpile abaplint-transpiler.json && node express.mjs"
+  },
+  "devDependencies": {
+    "@abaplint/cli": "2.120.21",
+    "@abaplint/database-sqlite": "2.13.40",
+    "@abaplint/runtime": "2.13.56",
+    "@abaplint/transpiler-cli": "2.13.56",
+    "express": "^5.2.1"
+  }
+}

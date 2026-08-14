@@ -1,0 +1,24 @@
+{
+  "input_folder": "src/",
+  "output_folder": "output/",
+  "libs": [
+    {
+      "url": "https://github.com/open-abap/open-abap-core"
+    },
+    {
+      "url": "https://github.com/open-abap/express-icf-shim"
+    }
+  ],
+  "write_unit_tests": true,
+  "write_source_map": true,
+  "options": {
+    "ignoreSyntaxCheck": false,
+    "addFilenames": true,
+    "addCommonJS": true,
+    "unknownTypes": "compileError",
+    "setup": {
+      "filename": "../setup.mjs",
+      "preFunction": "setup"
+    }
+  }
+}
