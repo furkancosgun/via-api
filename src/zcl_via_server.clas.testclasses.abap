@@ -56,12 +56,11 @@ CLASS ltcl_server_pipeline IMPLEMENTATION.
                                    IMPORTING ev_matched    = lv_matched
                                              et_parameters = lt_params ).
 
-    cl_abap_unit_assert=>assert_equals( act  = lv_matched
-                                         exp = abap_true ).
-    cl_abap_unit_assert=>assert_equals( act  = lines( lt_params )
-                                         exp = 1 ).
-    cl_abap_unit_assert=>assert_equals( act  = lt_params[ 1 ]-value
-                                         exp = 'docs/2026/report.pdf' ).
+    cl_abap_unit_assert=>assert_true( lv_matched ).
+    cl_abap_unit_assert=>assert_equals( exp = 1
+                                        act = lines( lt_params ) ).
+    cl_abap_unit_assert=>assert_equals( exp = 'docs/2026/report.pdf'
+                                        act = lt_params[ 1 ]-value ).
   ENDMETHOD.
 
   METHOD test_all_route.

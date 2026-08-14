@@ -23,24 +23,36 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~get_binary.
     TRY.
-        CALL METHOD mo_request->('GET_BINARY')
+        CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_BINARY')
           RECEIVING r_value = rv_result.
       CATCH cx_root.
     ENDTRY.
   ENDMETHOD.
 
   METHOD zif_via_http~get_header.
-    TRY.
-        CALL METHOD mo_request->('GET_HEADER_FIELD')
-          EXPORTING i_name  = iv_name
-          RECEIVING r_value = rv_result.
-      CATCH cx_root.
-    ENDTRY.
+    DATA(lv_upper) = to_upper( iv_name ).
+    DATA(lv_lower) = to_lower( iv_name ).
+
+    CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_HEADER_FIELD')
+      EXPORTING i_name  = iv_name
+      RECEIVING r_value = rv_result.
+
+    IF rv_result IS INITIAL.
+      CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_HEADER_FIELD')
+        EXPORTING i_name  = lv_upper
+        RECEIVING r_value = rv_result.
+    ENDIF.
+
+    IF rv_result IS INITIAL.
+      CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_HEADER_FIELD')
+        EXPORTING i_name  = lv_lower
+        RECEIVING r_value = rv_result.
+    ENDIF.
   ENDMETHOD.
 
   METHOD zif_via_http~get_method.
     TRY.
-        CALL METHOD mo_request->('GET_METHOD')
+        CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_METHOD')
           RECEIVING r_value = rv_result.
       CATCH cx_root.
         rv_result = zif_via_http~get_header( '~request_method' ).
@@ -49,7 +61,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~get_path.
     TRY.
-        CALL METHOD mo_request->('GET_REQUEST_URI')
+        CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_REQUEST_URI')
           RECEIVING r_value = rv_result.
       CATCH cx_root.
         rv_result = zif_via_http~get_header( '~request_uri' ).
@@ -58,7 +70,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~get_query.
     TRY.
-        CALL METHOD mo_request->('GET_FORM_FIELD')
+        CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_FORM_FIELD')
           EXPORTING i_name  = iv_name
           RECEIVING r_value = rv_result.
       CATCH cx_root.
@@ -67,7 +79,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~get_text.
     TRY.
-        CALL METHOD mo_request->('GET_TEXT')
+        CALL METHOD mo_request->('IF_WEB_HTTP_REQUEST~GET_TEXT')
           RECEIVING r_value = rv_result.
       CATCH cx_root.
     ENDTRY.
@@ -75,7 +87,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~set_binary.
     TRY.
-        CALL METHOD mo_response->('SET_BINARY')
+        CALL METHOD mo_response->('IF_WEB_HTTP_RESPONSE~SET_BINARY')
           EXPORTING i_data = iv_binary.
       CATCH cx_root.
     ENDTRY.
@@ -83,7 +95,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~set_header.
     TRY.
-        CALL METHOD mo_response->('SET_HEADER_FIELD')
+        CALL METHOD mo_response->('IF_WEB_HTTP_RESPONSE~SET_HEADER_FIELD')
           EXPORTING i_name  = iv_name
                     i_value = iv_value.
       CATCH cx_root.
@@ -94,7 +106,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
     DATA lv_reason TYPE string.
 
     TRY.
-        CALL METHOD mo_response->('SET_STATUS')
+        CALL METHOD mo_response->('IF_WEB_HTTP_RESPONSE~SET_STATUS')
           EXPORTING i_code   = iv_status
                     i_reason = lv_reason.
       CATCH cx_root.
@@ -103,7 +115,7 @@ CLASS lcl_cloud_service IMPLEMENTATION.
 
   METHOD zif_via_http~set_text.
     TRY.
-        CALL METHOD mo_response->('SET_TEXT')
+        CALL METHOD mo_response->('IF_WEB_HTTP_RESPONSE~SET_TEXT')
           EXPORTING i_text = iv_text.
       CATCH cx_root.
     ENDTRY.
@@ -132,7 +144,7 @@ CLASS lcl_onprem_service IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_http~get_binary.
-    CALL METHOD mo_request->('GET_DATA')
+    CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_DATA')
       RECEIVING data = rv_result.
   ENDMETHOD.
 
@@ -140,18 +152,18 @@ CLASS lcl_onprem_service IMPLEMENTATION.
     DATA(lv_upper) = to_upper( iv_name ).
     DATA(lv_lower) = to_lower( iv_name ).
 
-    CALL METHOD mo_request->('GET_HEADER_FIELD')
+    CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_HEADER_FIELD')
       EXPORTING name  = iv_name
       RECEIVING value = rv_result.
 
     IF rv_result IS INITIAL.
-      CALL METHOD mo_request->('GET_HEADER_FIELD')
+      CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_HEADER_FIELD')
         EXPORTING name  = lv_upper
         RECEIVING value = rv_result.
     ENDIF.
 
     IF rv_result IS INITIAL.
-      CALL METHOD mo_request->('GET_HEADER_FIELD')
+      CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_HEADER_FIELD')
         EXPORTING name  = lv_lower
         RECEIVING value = rv_result.
     ENDIF.
@@ -172,23 +184,23 @@ CLASS lcl_onprem_service IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_http~get_query.
-    CALL METHOD mo_request->('GET_FORM_FIELD')
+    CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_FORM_FIELD')
       EXPORTING name  = iv_name
       RECEIVING value = rv_result.
   ENDMETHOD.
 
   METHOD zif_via_http~get_text.
-    CALL METHOD mo_request->('GET_CDATA')
+    CALL METHOD mo_request->('IF_HTTP_REQUEST~GET_CDATA')
       RECEIVING data = rv_result.
   ENDMETHOD.
 
   METHOD zif_via_http~set_binary.
-    CALL METHOD mo_response->('SET_DATA')
+    CALL METHOD mo_response->('IF_HTTP_RESPONSE~SET_DATA')
       EXPORTING data = iv_binary.
   ENDMETHOD.
 
   METHOD zif_via_http~set_header.
-    CALL METHOD mo_response->('SET_HEADER_FIELD')
+    CALL METHOD mo_response->('IF_HTTP_RESPONSE~SET_HEADER_FIELD')
       EXPORTING name  = iv_name
                 value = iv_value.
   ENDMETHOD.
@@ -196,13 +208,13 @@ CLASS lcl_onprem_service IMPLEMENTATION.
   METHOD zif_via_http~set_status.
     DATA lv_reason TYPE string.
 
-    CALL METHOD mo_response->('SET_STATUS')
+    CALL METHOD mo_response->('IF_HTTP_RESPONSE~SET_STATUS')
       EXPORTING code   = iv_status
                 reason = lv_reason.
   ENDMETHOD.
 
   METHOD zif_via_http~set_text.
-    CALL METHOD mo_response->('SET_CDATA')
+    CALL METHOD mo_response->('IF_HTTP_RESPONSE~SET_CDATA')
       EXPORTING data = iv_text.
   ENDMETHOD.
 ENDCLASS.
@@ -260,7 +272,6 @@ CLASS lcl_route_matcher IMPLEMENTATION.
                                            ELSE substring( val = lv_rseg
                                                            off = 2
                                                            len = strlen( lv_rseg ) - 3 ) ).
-
 
         CLEAR lv_rest_path.
         LOOP AT lt_path_segs ASSIGNING FIELD-SYMBOL(<fs_pseg>) FROM lv_path_idx.

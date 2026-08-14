@@ -66,13 +66,17 @@ CLASS zcl_via_server DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_via_server IMPLEMENTATION.
+
+CLASS ZCL_VIA_SERVER IMPLEMENTATION.
+
+
   METHOD add_route.
     INSERT VALUE #( path    = iv_path
                     method  = iv_method
                     handler = io_handler )
            INTO TABLE ms_context-routes.
   ENDMETHOD.
+
 
   METHOD constructor.
     ms_context = VALUE ty_s_context( http          = io_http
@@ -82,59 +86,65 @@ CLASS zcl_via_server IMPLEMENTATION.
                                      error_handler = NEW zcl_via_error_handler( ) ).
   ENDMETHOD.
 
+
+  METHOD create_context.
+    ro_context = NEW zcl_via_context( io_http       = ms_context-http
+                                      io_cache      = ms_context-cache
+                                      io_container  = ms_context-container
+                                      io_serializer = ms_context-serializer
+                                      it_parameters = it_parameters ).
+  ENDMETHOD.
+
+
   METHOD factory_cloud.
     ro_server = NEW zcl_via_server( NEW lcl_cloud_service( io_request  = io_request
                                                            io_response = io_response ) ).
   ENDMETHOD.
 
+
   METHOD factory_onprem.
-    FIELD-SYMBOLS <fs_request>  TYPE REF TO object.
-    FIELD-SYMBOLS <fs_response> TYPE REF TO object.
+    DATA lr_request  TYPE REF TO object.
+    DATA lr_response TYPE REF TO object.
+    FIELD-SYMBOLS <fs_object> TYPE any.
 
-    ASSIGN io_server->('REQUEST') TO <fs_request>.
+    ASSIGN io_server->('REQUEST') TO <fs_object>.
     ASSERT sy-subrc = 0.
-    ASSIGN io_server->('RESPONSE') TO <fs_response>.
+
+    lr_request = <fs_object>.
+
+    ASSIGN io_server->('RESPONSE') TO <fs_object>.
     ASSERT sy-subrc = 0.
 
-    ro_server = NEW zcl_via_server( NEW lcl_onprem_service( io_request  = <fs_request>
-                                                            io_response = <fs_response> ) ).
+    lr_response = <fs_object>.
+
+    ro_server = NEW zcl_via_server( NEW lcl_onprem_service( io_request  = lr_request
+                                                            io_response = lr_response ) ).
   ENDMETHOD.
 
-  METHOD zif_via_server~delete.
-    add_route( iv_path    = iv_path
-               iv_method  = 'DELETE'
-               io_handler = io_handler ).
+
+  METHOD match_route.
+    DATA lv_matched TYPE abap_bool.
+
+    LOOP AT ms_context-routes ASSIGNING FIELD-SYMBOL(<fs_route>).
+      lcl_route_matcher=>match_path( EXPORTING iv_path       = iv_path
+                                               iv_route      = <fs_route>-path
+                                     IMPORTING ev_matched    = lv_matched
+                                               et_parameters = et_parameters ).
+      IF lv_matched = abap_false.
+        CONTINUE.
+      ENDIF.
+
+      IF iv_method <> <fs_route>-method.
+        APPEND <fs_route>-method TO et_allowed_methods.
+        CLEAR et_parameters.
+        CONTINUE.
+      ENDIF.
+
+      eo_route = <fs_route>-handler.
+      EXIT.
+    ENDLOOP.
   ENDMETHOD.
 
-  METHOD zif_via_server~get.
-    add_route( iv_path    = iv_path
-               iv_method  = 'GET'
-               io_handler = io_handler ).
-  ENDMETHOD.
-
-  METHOD zif_via_server~options.
-    add_route( iv_path    = iv_path
-               iv_method  = 'OPTIONS'
-               io_handler = io_handler ).
-  ENDMETHOD.
-
-  METHOD zif_via_server~patch.
-    add_route( iv_path    = iv_path
-               iv_method  = 'PATCH'
-               io_handler = io_handler ).
-  ENDMETHOD.
-
-  METHOD zif_via_server~post.
-    add_route( iv_path    = iv_path
-               iv_method  = 'POST'
-               io_handler = io_handler ).
-  ENDMETHOD.
-
-  METHOD zif_via_server~put.
-    add_route( iv_path    = iv_path
-               iv_method  = 'PUT'
-               io_handler = io_handler ).
-  ENDMETHOD.
 
   METHOD zif_via_server~all.
     zif_via_server~get( iv_path    = iv_path
@@ -152,13 +162,13 @@ CLASS zcl_via_server IMPLEMENTATION.
     ro_server = me.
   ENDMETHOD.
 
-  METHOD create_context.
-    ro_context = NEW zcl_via_context( io_http       = ms_context-http
-                                      io_cache      = ms_context-cache
-                                      io_container  = ms_context-container
-                                      io_serializer = ms_context-serializer
-                                      it_parameters = it_parameters ).
+
+  METHOD zif_via_server~delete.
+    add_route( iv_path    = iv_path
+               iv_method  = 'DELETE'
+               io_handler = io_handler ).
   ENDMETHOD.
+
 
   METHOD zif_via_server~dispatch.
     DATA lo_route           TYPE REF TO zif_via_handler.
@@ -215,46 +225,63 @@ CLASS zcl_via_server IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-  METHOD zif_via_server~set_error_handler.
-    ms_context-error_handler = io_error_handler.
+
+  METHOD zif_via_server~get.
+    add_route( iv_path    = iv_path
+               iv_method  = 'GET'
+               io_handler = io_handler ).
   ENDMETHOD.
 
-  METHOD zif_via_server~set_serializer.
-    ms_context-serializer = io_serializer.
+
+  METHOD zif_via_server~options.
+    add_route( iv_path    = iv_path
+               iv_method  = 'OPTIONS'
+               io_handler = io_handler ).
   ENDMETHOD.
+
+
+  METHOD zif_via_server~patch.
+    add_route( iv_path    = iv_path
+               iv_method  = 'PATCH'
+               io_handler = io_handler ).
+  ENDMETHOD.
+
+
+  METHOD zif_via_server~post.
+    add_route( iv_path    = iv_path
+               iv_method  = 'POST'
+               io_handler = io_handler ).
+  ENDMETHOD.
+
+
+  METHOD zif_via_server~put.
+    add_route( iv_path    = iv_path
+               iv_method  = 'PUT'
+               io_handler = io_handler ).
+  ENDMETHOD.
+
 
   METHOD zif_via_server~set_cache.
     ms_context-cache = io_cache.
   ENDMETHOD.
 
+
   METHOD zif_via_server~set_container.
     ms_context-container = io_container.
   ENDMETHOD.
 
-  METHOD zif_via_server~use.
-    APPEND io_middleware TO ms_context-middlewares.
+
+  METHOD zif_via_server~set_error_handler.
+    ms_context-error_handler = io_error_handler.
   ENDMETHOD.
 
-  METHOD match_route.
-    DATA lv_matched TYPE abap_bool.
 
-    LOOP AT ms_context-routes ASSIGNING FIELD-SYMBOL(<fs_route>).
-      lcl_route_matcher=>match_path( EXPORTING iv_path       = iv_path
-                                               iv_route      = <fs_route>-path
-                                     IMPORTING ev_matched    = lv_matched
-                                               et_parameters = et_parameters ).
-      IF lv_matched = abap_false.
-        CONTINUE.
-      ENDIF.
+  METHOD zif_via_server~set_serializer.
+    ms_context-serializer = io_serializer.
+  ENDMETHOD.
 
-      IF iv_method <> <fs_route>-method.
-        APPEND <fs_route>-method TO et_allowed_methods.
-        CLEAR et_parameters.
-        CONTINUE.
-      ENDIF.
 
-      eo_route = <fs_route>-handler.
-      EXIT.
-    ENDLOOP.
+  METHOD zif_via_server~use.
+    APPEND io_middleware TO ms_context-middlewares.
   ENDMETHOD.
 ENDCLASS.

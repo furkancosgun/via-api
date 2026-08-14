@@ -5,17 +5,15 @@ INTERFACE zif_via_context PUBLIC.
       name  TYPE string,
       value TYPE string,
     END OF ty_s_name_value.
-  TYPES ty_t_name_value TYPE HASHED TABLE OF ty_s_name_value WITH UNIQUE KEY name.
+  TYPES ty_t_name_value TYPE SORTED TABLE OF ty_s_name_value WITH UNIQUE KEY name.
 
   "! Returns the HTTP method of the request
-  "! @parameter rv_result |
-  "! @parameter rv_method | Uppercased HTTP method
+  "! @parameter rv_result | Uppercased HTTP method
   METHODS get_method
     RETURNING VALUE(rv_result) TYPE string.
 
   "! Returns the request path
-  "! @parameter rv_result |
-  "! @parameter rv_path | Path without query string
+  "! @parameter rv_result | Path without query string
   METHODS get_path
     RETURNING VALUE(rv_result) TYPE string.
 

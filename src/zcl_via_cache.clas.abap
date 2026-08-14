@@ -51,7 +51,7 @@ CLASS zcl_via_cache IMPLEMENTATION.
     DATA lv_expires TYPE timestamp.
 
     GET TIME STAMP FIELD lv_expires.
-    lv_expires += iv_ttl.
+    lv_expires = lv_expires + iv_ttl.
 
     ASSIGN mt_entries[ key = iv_key ] TO FIELD-SYMBOL(<fs_entry>).
     IF sy-subrc = 0.
