@@ -24,6 +24,17 @@ CLASS zcl_via_context DEFINITION
     DATA mo_container  TYPE REF TO zif_via_container.
     DATA mo_serializer TYPE REF TO zif_via_serializer.
     DATA mt_parameters TYPE zif_via_context=>ty_t_name_value.
+
+    METHODS write_text
+      IMPORTING iv_text TYPE string.
+
+    METHODS write_binary
+      IMPORTING iv_binary TYPE xstring.
+
+    METHODS write_with_serializer
+      IMPORTING io_serializer TYPE REF TO zif_via_serializer
+                iv_data       TYPE any
+      RAISING   zcx_via_error.
 ENDCLASS.
 
 
@@ -84,31 +95,53 @@ CLASS zcl_via_context IMPLEMENTATION.
     ro_context = me.
   ENDMETHOD.
 
-  METHOD zif_via_context~json.
-    DATA(lo_serializer) = CAST zif_via_serializer( NEW zcl_via_serializer_json( ) ).
-    mo_http->set_text( lo_serializer->serialize( iv_data ) ).
+  METHOD write_text.
+    mo_http->set_text( iv_text ).
+    mo_http->set_header( iv_name  = 'content-length'
+                         iv_value = |{ strlen( iv_text ) }| ).
+  ENDMETHOD.
+
+  METHOD write_binary.
+    mo_http->set_binary( iv_binary ).
+    mo_http->set_header( iv_name  = 'content-length'
+                         iv_value = |{ xstrlen( iv_binary ) }| ).
+  ENDMETHOD.
+
+  METHOD write_with_serializer.
+    write_text( io_serializer->serialize( iv_data ) ).
     mo_http->set_header( iv_name  = 'content-type'
-                         iv_value = lo_serializer->content_type( ) ).
+                         iv_value = io_serializer->content_type( ) ).
+  ENDMETHOD.
+
+  METHOD zif_via_context~json.
+    DATA(lo_serializer) = COND #( WHEN mo_serializer IS INSTANCE OF zcl_via_serializer_json
+                                  THEN mo_serializer
+                                  ELSE NEW zcl_via_serializer_json( ) ).
+
+    write_with_serializer( io_serializer = lo_serializer
+                           iv_data       = iv_data ).
     ro_context = me.
   ENDMETHOD.
 
   METHOD zif_via_context~xml.
-    DATA(lo_serializer) = CAST zif_via_serializer( NEW zcl_via_serializer_xml( ) ).
-    mo_http->set_text( lo_serializer->serialize( iv_data ) ).
-    mo_http->set_header( iv_name  = 'content-type'
-                         iv_value = lo_serializer->content_type( ) ).
+    DATA(lo_serializer) = COND #( WHEN mo_serializer IS INSTANCE OF zcl_via_serializer_xml
+                                  THEN mo_serializer
+                                  ELSE NEW zcl_via_serializer_xml( ) ).
+
+    write_with_serializer( io_serializer = lo_serializer
+                           iv_data       = iv_data ).
     ro_context = me.
   ENDMETHOD.
 
   METHOD zif_via_context~text.
-    mo_http->set_text( iv_text ).
+    write_text( iv_text ).
     mo_http->set_header( iv_name  = 'content-type'
                          iv_value = 'text/plain; charset=utf-8' ).
     ro_context = me.
   ENDMETHOD.
 
   METHOD zif_via_context~file.
-    mo_http->set_binary( iv_binary ).
+    write_binary( iv_binary ).
     mo_http->set_header( iv_name  = 'content-type'
                          iv_value = iv_content_type ).
     IF iv_filename IS NOT INITIAL.
@@ -121,7 +154,8 @@ CLASS zcl_via_context IMPLEMENTATION.
   METHOD zif_via_context~ok.
     mo_http->set_status( 200 ).
     IF iv_data IS SUPPLIED.
-      zif_via_context~json( iv_data ).
+      write_with_serializer( io_serializer = mo_serializer
+                             iv_data       = iv_data ).
     ENDIF.
     ro_context = me.
   ENDMETHOD.
@@ -133,7 +167,8 @@ CLASS zcl_via_context IMPLEMENTATION.
                            iv_value = iv_uri ).
     ENDIF.
     IF iv_data IS SUPPLIED.
-      zif_via_context~json( iv_data ).
+      write_with_serializer( io_serializer = mo_serializer
+                             iv_data       = iv_data ).
     ENDIF.
     ro_context = me.
   ENDMETHOD.
@@ -141,7 +176,8 @@ CLASS zcl_via_context IMPLEMENTATION.
   METHOD zif_via_context~accepted.
     mo_http->set_status( 202 ).
     IF iv_data IS SUPPLIED.
-      zif_via_context~json( iv_data ).
+      write_with_serializer( io_serializer = mo_serializer
+                             iv_data       = iv_data ).
     ENDIF.
     ro_context = me.
   ENDMETHOD.
@@ -156,15 +192,11 @@ CLASS zcl_via_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_context~unauthorized.
-    RAISE EXCEPTION NEW zcx_via_error( iv_status = 401
-                                       iv_title  = 'Unauthorized'
-                                       iv_detail = iv_detail ).
+    zcx_via_error=>raise_unauthorized( iv_detail = iv_detail ).
   ENDMETHOD.
 
   METHOD zif_via_context~forbidden.
-    RAISE EXCEPTION NEW zcx_via_error( iv_status = 403
-                                       iv_title  = 'Forbidden'
-                                       iv_detail = iv_detail ).
+    zcx_via_error=>raise_forbidden( iv_detail = iv_detail ).
   ENDMETHOD.
 
   METHOD zif_via_context~not_found.
@@ -172,9 +204,7 @@ CLASS zcl_via_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_context~conflict.
-    RAISE EXCEPTION NEW zcx_via_error( iv_status = 409
-                                       iv_title  = 'Conflict'
-                                       iv_detail = iv_detail ).
+    zcx_via_error=>raise_conflict( iv_detail = iv_detail ).
   ENDMETHOD.
 
   METHOD zif_via_context~redirect.
@@ -194,11 +224,9 @@ CLASS zcl_via_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_context~download.
-    mo_http->set_binary( iv_data ).
-    mo_http->set_header( iv_name  = 'content-type'
-                         iv_value = 'application/octet-stream' ).
-    mo_http->set_header( iv_name  = 'content-disposition'
-                         iv_value = |attachment; filename="{ iv_filename }"| ).
+    zif_via_context~file( iv_binary       = iv_data
+                          iv_content_type = 'application/octet-stream'
+                          iv_filename     = iv_filename ).
     ro_context = me.
   ENDMETHOD.
 

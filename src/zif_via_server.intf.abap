@@ -54,6 +54,16 @@ INTERFACE zif_via_server PUBLIC.
               io_handler       TYPE REF TO zif_via_handler
     RETURNING VALUE(ro_server) TYPE REF TO zif_via_server.
 
+  "! Registers a HEAD route
+  "! Falls back to the GET handler when no HEAD route exists.
+  "! @parameter iv_path    | Route path, may contain {name} segments
+  "! @parameter io_handler | Route handler
+  "! @parameter ro_server  | This server, for fluent calls
+  METHODS head
+    IMPORTING iv_path          TYPE string
+              io_handler       TYPE REF TO zif_via_handler
+    RETURNING VALUE(ro_server) TYPE REF TO zif_via_server.
+
   "! Registers a route for ALL HTTP methods
   "! @parameter iv_path    | Route path, may contain {name} segments
   "! @parameter io_handler | Route handler

@@ -25,13 +25,13 @@ CLASS zcl_via_serializer_json IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_via_serializer~serialize.
-    rv_serialized = /ui2/cl_json=>serialize( data         = iv_data
-                                              pretty_name = mv_pretty_name ).
+    rv_serialized = /ui2/cl_json=>serialize( data        = iv_data
+                                             pretty_name = mv_pretty_name ).
   ENDMETHOD.
 
   METHOD zif_via_serializer~deserialize.
-    /ui2/cl_json=>deserialize( EXPORTING json         = iv_serialized
-                                          pretty_name = mv_pretty_name
-                               CHANGING  data         = cv_data ).
+    /ui2/cl_json=>deserialize( EXPORTING json        = iv_serialized
+                                         pretty_name = mv_pretty_name
+                               CHANGING  data        = cv_data ).
   ENDMETHOD.
 ENDCLASS.

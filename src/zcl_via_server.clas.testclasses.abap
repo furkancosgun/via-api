@@ -48,19 +48,14 @@ CLASS ltcl_server_pipeline IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD test_wildcard_route.
-    DATA lv_matched TYPE abap_bool.
-    DATA lt_params  TYPE zif_via_context=>ty_t_name_value.
+    DATA(ls_match) = lcl_route_matcher=>match_path( iv_path  = '/files/docs/2026/report.pdf'
+                                                    iv_route = '/files/{*filepath}' ).
 
-    lcl_route_matcher=>match_path( EXPORTING iv_path       = '/files/docs/2026/report.pdf'
-                                             iv_route      = '/files/{*filepath}'
-                                   IMPORTING ev_matched    = lv_matched
-                                             et_parameters = lt_params ).
-
-    cl_abap_unit_assert=>assert_true( lv_matched ).
+    cl_abap_unit_assert=>assert_true( ls_match-matched ).
     cl_abap_unit_assert=>assert_equals( exp = 1
-                                        act = lines( lt_params ) ).
+                                        act = lines( ls_match-parameters ) ).
     cl_abap_unit_assert=>assert_equals( exp = 'docs/2026/report.pdf'
-                                        act = lt_params[ 1 ]-value ).
+                                        act = ls_match-parameters[ 1 ]-value ).
   ENDMETHOD.
 
   METHOD test_all_route.

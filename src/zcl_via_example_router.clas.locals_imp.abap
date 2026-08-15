@@ -13,6 +13,7 @@ CLASS lcl_get_users_handler DEFINITION.
     INTERFACES zif_via_handler.
 ENDCLASS.
 
+
 CLASS lcl_get_users_handler IMPLEMENTATION.
   METHOD zif_via_handler~handle.
     DATA lt_users TYPE ty_t_user_dto.
@@ -30,6 +31,7 @@ CLASS lcl_get_user_by_id_handler DEFINITION.
     INTERFACES zif_via_handler.
 ENDCLASS.
 
+
 CLASS lcl_get_user_by_id_handler IMPLEMENTATION.
   METHOD zif_via_handler~handle.
     DATA(lv_id) = io_context->param( 'id' ).
@@ -39,7 +41,9 @@ CLASS lcl_get_user_by_id_handler IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    io_context->ok( VALUE ty_s_user_dto( id = lv_id name = 'Furkan' role = 'Admin' ) ).
+    io_context->ok( VALUE ty_s_user_dto( id   = lv_id
+                                         name = 'Furkan'
+                                         role = 'Admin' ) ).
   ENDMETHOD.
 ENDCLASS.
 
@@ -48,6 +52,7 @@ CLASS lcl_create_user_handler DEFINITION.
   PUBLIC SECTION.
     INTERFACES zif_via_handler.
 ENDCLASS.
+
 
 CLASS lcl_create_user_handler IMPLEMENTATION.
   METHOD zif_via_handler~handle.
@@ -72,6 +77,7 @@ CLASS lcl_delete_user_handler DEFINITION.
     INTERFACES zif_via_handler.
 ENDCLASS.
 
+
 CLASS lcl_delete_user_handler IMPLEMENTATION.
   METHOD zif_via_handler~handle.
     DATA(lv_id) = io_context->param( 'id' ).
@@ -90,6 +96,7 @@ CLASS lcl_health_handler DEFINITION.
   PUBLIC SECTION.
     INTERFACES zif_via_handler.
 ENDCLASS.
+
 
 CLASS lcl_health_handler IMPLEMENTATION.
   METHOD zif_via_handler~handle.

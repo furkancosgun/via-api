@@ -7,9 +7,6 @@ CLASS zcl_via_example_router DEFINITION
     "! @parameter io_server | VIA API server instance
     METHODS register_routes
       IMPORTING io_server TYPE REF TO zif_via_server.
-
-  PROTECTED SECTION.
-  PRIVATE SECTION.
 ENDCLASS.
 
 
